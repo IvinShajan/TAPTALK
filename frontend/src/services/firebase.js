@@ -65,8 +65,9 @@ export async function saveUserProfile(uid, phoneNumber, displayName, email) {
     displayName: displayName || phoneNumber || email || "User",
     createdAt: Date.now(),
   };
-  if (phoneNumber) data.phoneNumber = phoneNumber;
-  if (email) data.email = email;
+  if (phoneNumber) data.phoneNumber = phoneNumber.trim();
+  if (email) data.email = email.toLowerCase().trim();
+
 
   await setDoc(doc(db, "users", uid), data, { merge: true });
 }
@@ -80,23 +81,38 @@ export async function getUserByPhone(phoneNumber) {
 }
 
 export async function getUserByEmail(email) {
-  const q = query(collection(db, "users"), where("email", "==", email));
+  const q = query(collection(db, "users"), where("email", "==", email.toLowerCase().trim()));
   const snap = await getDocs(q);
   if (snap.empty) return null;
   return snap.docs[0].data();
 }
 
 
+
 export async function addFriend(myUid, contactInfo) {
   let friend = null;
+  const input = contactInfo.trim();
+
   // Simple check for email vs phone
-  if (contactInfo.includes("@")) {
-    friend = await getUserByEmail(contactInfo);
+  if (input.includes("@")) {
+    friend = await getUserByEmail(input);
   } else {
-    friend = await getUserByPhone(contactInfo);
+    // Normalize phone: keep + but remove spaces/dashes
+    const normalizedPhone = input.startsWith("+") 
+      ? "+" + input.replace(/\D/g, "") 
+      : input.replace(/\D/g, "");
+    
+    // We try exact match first, then formatted if needed
+    friend = await getUserByPhone(normalizedPhone);
+    
+    // Fallback: try adding the + if the user forgot it
+    if (!friend && !normalizedPhone.startsWith("+")) {
+       friend = await getUserByPhone("+" + normalizedPhone);
+    }
   }
   
-  if (!friend) throw new Error("No user found with that phone or email.");
+  if (!friend) throw new Error("No user found with that phone or email. Make sure they have logged in at least once!");
+
   
   await setDoc(doc(db, "users", myUid, "friends", friend.uid), {
     uid: friend.uid,
