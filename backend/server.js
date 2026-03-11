@@ -2,6 +2,30 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
+const fs = require("fs");
+const path = require("path");
+
+
+const USERS_FILE = path.join(__dirname, "users.json");
+
+// Load existing users from JSON file
+let userRegistry = {};
+if (fs.existsSync(USERS_FILE)) {
+  try {
+    userRegistry = JSON.parse(fs.readFileSync(USERS_FILE, "utf8"));
+  } catch (e) {
+    console.error("Error loading users.json:", e);
+  }
+}
+
+function saveRegistry() {
+  try {
+    fs.writeFileSync(USERS_FILE, JSON.stringify(userRegistry, null, 2));
+  } catch (e) {
+    console.error("Error saving users.json:", e);
+  }
+}
+
 
 const app = express();
 app.use(cors());
@@ -33,7 +57,14 @@ io.on("connection", (socket) => {
     
     if (!id) return;
 
-    // Store full user object
+    // 1. Save to JSON File Registry
+    if (!userRegistry[id]) {
+      userRegistry[id] = { ...userData, registeredAt: new Date().toISOString() };
+      saveRegistry();
+      console.log(`New user saved to registry: ${id}`);
+    }
+
+    // 2. Add to Online Map
     onlineUsers.set(id, { 
       socketId: socket.id, 
       ...userData 
@@ -50,15 +81,21 @@ io.on("connection", (socket) => {
     });
   });
 
-  // Search Render's "live database" for a user
+  // Search Render's JSON + Live database
   socket.on("search-user", ({ identifier }, callback) => {
-    const user = onlineUsers.get(identifier);
-    if (user) {
-      callback({ found: true, user });
+    // Check live first, then registry
+    const liveUser = onlineUsers.get(identifier);
+    const registeredUser = userRegistry[identifier];
+
+    if (liveUser) {
+      callback({ found: true, user: liveUser });
+    } else if (registeredUser) {
+      callback({ found: true, user: registeredUser });
     } else {
       callback({ found: false });
     }
   });
+
 
 
 
