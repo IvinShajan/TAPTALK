@@ -13,15 +13,22 @@ export default function Friends({ user, onSelectFriend, onIncomingCall }) {
 
   // Load friends + online status
   const loadFriends = async () => {
-    const list = await getFriends(user.uid);
-    setFriends(list);
-    const map = {};
-    for (const f of list) {
-      const id = f.phoneNumber || f.email;
-      map[id] = await checkFriendOnline(id);
+    try {
+      const list = await getFriends(user.uid);
+      setFriends(list);
+      const map = {};
+      for (const f of list) {
+        const id = f.phoneNumber || f.email;
+        if (id) {
+          map[id] = await checkFriendOnline(id);
+        }
+      }
+      setOnlineMap(map);
+    } catch (e) {
+      console.error("Failed to load friends:", e);
     }
-    setOnlineMap(map);
   };
+
 
 
   useEffect(() => {
@@ -44,17 +51,19 @@ export default function Friends({ user, onSelectFriend, onIncomingCall }) {
       socket.off("incoming-call");
     };
   }, []);
-
   const handleAddFriend = async () => {
     setAddError("");
     if (!addInput.trim()) return;
     setAddLoading(true);
     try {
-      // If it's not an email, format as a phone number
-      const contact = addInput.includes("@") ? addInput : 
-                      (addInput.startsWith("+") ? addInput : "+" + addInput);
+      const contact = addInput.trim();
+      const myId = user.phoneNumber || user.email;
       
-      await addFriend(user.uid, contact.trim());
+      if (contact === myId) {
+        throw new Error("You cannot add yourself as a friend.");
+      }
+
+      await addFriend(user.uid, contact);
       setAddInput("");
       setShowAdd(false);
       await loadFriends();
@@ -109,8 +118,9 @@ export default function Friends({ user, onSelectFriend, onIncomingCall }) {
       )}
 
       <div className="online-count">
-        {Object.values(onlineMap).filter(Boolean).length} online
+        {friends.filter(f => onlineMap[f.phoneNumber || f.email]).length} online
       </div>
+
 
       {sortedFriends.length === 0 ? (
         <div className="empty-state">
