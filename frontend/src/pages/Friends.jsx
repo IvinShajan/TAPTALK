@@ -91,12 +91,14 @@ export default function Friends({ user, onSelectFriend, onIncomingCall }) {
         <div className="add-friend-panel">
           <input
             type="text"
+            inputMode="email"
             placeholder="+1 234 567 8900 or email@example.com"
             value={addInput}
             onChange={(e) => setAddInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleAddFriend()}
             autoFocus
           />
+
 
 
           <button className="btn-primary" onClick={handleAddFriend} disabled={addLoading}>
