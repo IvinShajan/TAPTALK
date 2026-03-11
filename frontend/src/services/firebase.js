@@ -8,6 +8,8 @@ import {
   signOut,
 } from "firebase/auth";
 import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { searchUserViaSocket } from "./socket";
+
 
 // Replace with your Firebase config
 const firebaseConfig = {
@@ -113,13 +115,20 @@ export async function addFriend(myUid, contactInfo) {
     // We try exact match first, then formatted if needed
     friend = await getUserByPhone(normalizedPhone);
     
-    // Fallback: try adding the + if the user forgot it
+    // Fallback 1: try adding the + if the user forgot it
     if (!friend && !normalizedPhone.startsWith("+")) {
        friend = await getUserByPhone("+" + normalizedPhone);
     }
   }
+
+  // Fallback 2: Check the "Render Database" (Connected Sockets)
+  if (!friend) {
+    console.log("Not found in Firebase, checking Render backend...");
+    friend = await searchUserViaSocket(input);
+  }
   
   if (!friend) throw new Error("No user found with that phone or email. Make sure they have logged in at least once!");
+
 
   
   await setDoc(doc(db, "users", myUid, "friends", friend.uid), {

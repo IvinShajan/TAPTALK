@@ -21,7 +21,6 @@ export function registerUser(userData) {
   }
 }
 
-// Ensure re-registration on reconnect
 export function initSocket() {
   const s = getSocket();
   s.on("connect", () => {
@@ -30,6 +29,16 @@ export function initSocket() {
     }
   });
 }
+
+export function searchUserViaSocket(identifier) {
+  return new Promise((resolve) => {
+    getSocket().emit("search-user", { identifier }, (response) => {
+      resolve(response.found ? response.user : null);
+    });
+  });
+}
+
+
 
 
 export function checkFriendOnline(identifier) {

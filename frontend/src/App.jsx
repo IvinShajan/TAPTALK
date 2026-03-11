@@ -22,10 +22,13 @@ export default function App() {
       setAuthLoading(false);
       if (u) {
         registerUser({ 
+          uid: u.uid,
           phoneNumber: u.phoneNumber, 
-          email: u.email 
+          email: u.email,
+          displayName: u.displayName
         });
       }
+
 
     });
     return unsub;
@@ -34,10 +37,13 @@ export default function App() {
   const handleLogin = (u) => {
     setUser(u);
     registerUser({ 
+      uid: u.uid,
       phoneNumber: u.phoneNumber, 
-      email: u.email 
+      email: u.email,
+      displayName: u.displayName
     });
   };
+
 
 
   const handleSelectFriend = (friend) => {

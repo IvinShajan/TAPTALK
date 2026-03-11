@@ -27,11 +27,20 @@ io.on("connection", (socket) => {
   console.log("Socket connected:", socket.id);
 
   // User comes online
-  socket.on("register", ({ phoneNumber, email }) => {
+  socket.on("register", (userData) => {
+    const { phoneNumber, email, displayName, uid } = userData;
     const id = phoneNumber || email;
-    onlineUsers.set(id, socket.id);
+    
+    if (!id) return;
+
+    // Store full user object
+    onlineUsers.set(id, { 
+      socketId: socket.id, 
+      ...userData 
+    });
+    
     socketToUser.set(socket.id, id);
-    console.log(`Registered: ${id} -> ${socket.id}`);
+    console.log(`Registered: ${id} [${displayName || 'No Name'}]`);
 
     // Notify all friends that this user is online
     socket.broadcast.emit("friend-status", {
@@ -40,6 +49,17 @@ io.on("connection", (socket) => {
       online: true,
     });
   });
+
+  // Search Render's "live database" for a user
+  socket.on("search-user", ({ identifier }, callback) => {
+    const user = onlineUsers.get(identifier);
+    if (user) {
+      callback({ found: true, user });
+    } else {
+      callback({ found: false });
+    }
+  });
+
 
 
   // Check if a friend is online
