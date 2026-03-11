@@ -4,10 +4,13 @@ const RTC_CONFIG = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
-    // Add free TURN server for production (e.g., Metered.ca free tier)
-    // { urls: "turn:...", username: "...", credential: "..." },
+    { urls: "stun:stun2.l.google.com:19302" },
+    { urls: "stun:stun3.l.google.com:19302" },
+    { urls: "stun:stun4.l.google.com:19302" },
   ],
+  iceCandidatePoolSize: 10,
 };
+
 
 let peerConnection = null;
 let localStream = null;
@@ -51,9 +54,15 @@ function createPeerConnection(friendPhone, myPhone) {
 
 
   pc.ontrack = ({ streams }) => {
+    console.log("Remote track received:", streams[0]);
     const audio = document.getElementById("remote-audio");
-    if (audio) audio.srcObject = streams[0];
+    if (audio) {
+      audio.srcObject = streams[0];
+      // Explicitly play to bypass mobile browser auto-play restrictions
+      audio.play().catch(e => console.warn("Audio play wait:", e));
+    }
   };
+
 
   pc.onconnectionstatechange = () => {
     if (["disconnected", "failed", "closed"].includes(pc.connectionState)) {
