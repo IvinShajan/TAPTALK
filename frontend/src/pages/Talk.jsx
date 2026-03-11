@@ -7,7 +7,9 @@ import {
   setMicActive,
   endCall,
   setCallEndedCallback,
+  setRemoteStreamCallback,
 } from "../services/webrtc";
+
 import { hangUp, rejectCall, getSocket } from "../services/socket";
 
 export default function Talk({ user, friend, incomingCall, onHangUp }) {
@@ -18,6 +20,9 @@ export default function Talk({ user, friend, incomingCall, onHangUp }) {
   const [callDuration, setCallDuration] = useState(0);
   const timerRef = useRef(null);
   const holdRef = useRef(false);
+  const audioRef = useRef(null);
+  const remoteStreamRef = useRef(null);
+
 
   // ── Lifecycle ──────────────────────────────────────────────────────────────
 
@@ -26,6 +31,15 @@ export default function Talk({ user, friend, incomingCall, onHangUp }) {
       setCallState("ended");
       setTimeout(onHangUp, 1200);
     });
+
+    setRemoteStreamCallback((stream) => {
+      remoteStreamRef.current = stream;
+      if (audioRef.current) {
+        audioRef.current.srcObject = stream;
+        audioRef.current.play().catch(console.error);
+      }
+    });
+
 
     const socket = getSocket();
 
@@ -121,7 +135,8 @@ export default function Talk({ user, friend, incomingCall, onHangUp }) {
 
   return (
     <div className="talk-page">
-      <audio id="remote-audio" autoPlay playsInline />
+      <audio ref={audioRef} autoPlay playsInline />
+
 
       <div className="talk-card">
         <button className="back-btn" onClick={callState === "active" ? handleHangUp : onHangUp}>

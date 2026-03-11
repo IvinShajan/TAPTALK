@@ -16,6 +16,8 @@ let peerConnection = null;
 let localStream = null;
 let pendingCandidates = [];
 let onCallEndedCb = null;
+let onRemoteStreamCb = null;
+
 
 function normalizeId(id) {
   if (!id) return null;
@@ -30,6 +32,11 @@ function normalizeId(id) {
 export function setCallEndedCallback(cb) {
   onCallEndedCb = cb;
 }
+
+export function setRemoteStreamCallback(cb) {
+  onRemoteStreamCb = cb;
+}
+
 
 async function getMicStream() {
   if (localStream && localStream.active) return localStream;
@@ -78,13 +85,9 @@ function createPeerConnection(friendPhone, myPhone) {
 
   pc.ontrack = ({ streams }) => {
     console.log("Remote track received:", streams[0]);
-    const audio = document.getElementById("remote-audio");
-    if (audio) {
-      audio.srcObject = streams[0];
-      // Explicitly play to bypass mobile browser auto-play restrictions
-      audio.play().catch(e => console.warn("Audio play wait:", e));
-    }
+    onRemoteStreamCb?.(streams[0]);
   };
+
 
 
   pc.onconnectionstatechange = () => {
@@ -101,28 +104,32 @@ function createPeerConnection(friendPhone, myPhone) {
 
 export async function startCall(friendPhone, myPhone) {
   const stream = await getMicStream();
-  // Ensure mic starts muted for PTT
-  stream.getAudioTracks().forEach(t => t.enabled = false);
+  // IMPORTANT: Keep enabled=true during negotiation so SDP is active
+  stream.getAudioTracks().forEach(t => t.enabled = true);
   
   const pc = createPeerConnection(friendPhone, myPhone);
-
   stream.getTracks().forEach((track) => pc.addTrack(track, stream));
 
   const offer = await pc.createOffer();
   await pc.setLocalDescription(offer);
   sendOffer(normalizeId(friendPhone), offer, normalizeId(myPhone));
+
+  // Now mute for PTT standby
+  setTimeout(() => {
+    stream.getAudioTracks().forEach(t => t.enabled = false);
+  }, 100);
 }
+
 
 
 // ── Callee ────────────────────────────────────────────────────────────────────
 
 export async function acceptCall(friendPhone, offer, myPhone) {
   const stream = await getMicStream();
-  // Ensure mic starts muted for PTT
-  stream.getAudioTracks().forEach(t => t.enabled = false);
+  // IMPORTANT: Keep enabled=true during negotiation
+  stream.getAudioTracks().forEach(t => t.enabled = true);
 
   const pc = createPeerConnection(friendPhone, myPhone);
-
   stream.getTracks().forEach((track) => pc.addTrack(track, stream));
 
   await pc.setRemoteDescription(new RTCSessionDescription(offer));
@@ -136,7 +143,13 @@ export async function acceptCall(friendPhone, offer, myPhone) {
   const answer = await pc.createAnswer();
   await pc.setLocalDescription(answer);
   sendAnswer(normalizeId(friendPhone), answer);
+
+  // Now mute for PTT standby
+  setTimeout(() => {
+    stream.getAudioTracks().forEach(t => t.enabled = false);
+  }, 100);
 }
+
 
 
 // ── Common ────────────────────────────────────────────────────────────────────
