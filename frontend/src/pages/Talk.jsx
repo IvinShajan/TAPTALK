@@ -67,8 +67,12 @@ export default function Talk({ user, friend, incomingCall, onHangUp }) {
     if (!incomingCall) {
       const friendId = friend.phoneNumber || friend.email;
       const myId = user.phoneNumber || user.email;
-      startCall(friendId, myId);
+      startCall(friendId, myId).catch(console.error);
+    } else {
+      // Ten Ten Style: Auto-accept incoming voices!
+      handleAccept().catch(console.error);
     }
+
 
 
     return () => {
@@ -123,13 +127,16 @@ export default function Talk({ user, friend, incomingCall, onHangUp }) {
     holdRef.current = true;
     setTalking(true);
     setMicActive(true);
+    if ("vibrate" in navigator) navigator.vibrate(50);
   };
 
   const stopTalking = () => {
     holdRef.current = false;
     setTalking(false);
     setMicActive(false);
+    if ("vibrate" in navigator) navigator.vibrate(20);
   };
+
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -159,10 +166,11 @@ export default function Talk({ user, friend, incomingCall, onHangUp }) {
 
         {callState === "incoming" && (
           <>
-            <div className="status-badge incoming">Incoming Call</div>
-            <div className="incoming-actions">
-              <button className="btn-reject" onClick={handleReject}>✕ Decline</button>
-              <button className="btn-accept" onClick={handleAccept}>✓ Accept</button>
+            <div className="status-badge incoming">Receiving Voice…</div>
+            <div className="voice-visualizer">
+              <div className="bar"></div>
+              <div className="bar"></div>
+              <div className="bar"></div>
             </div>
           </>
         )}
@@ -170,24 +178,27 @@ export default function Talk({ user, friend, incomingCall, onHangUp }) {
         {callState === "active" && (
           <>
             <div className="call-timer">{formatTime(callDuration)}</div>
-            <div className="status-badge connected">Connected</div>
+            <div className="status-badge connected">Live</div>
 
             <div
-              className={`ptt-button ${talking ? "active" : ""}`}
+              className={`ptt-button ten-ten ${talking ? "active" : ""}`}
               onMouseDown={startTalking}
               onMouseUp={stopTalking}
               onTouchStart={(e) => { e.preventDefault(); startTalking(); }}
               onTouchEnd={(e) => { e.preventDefault(); stopTalking(); }}
             >
-              <span className="ptt-icon">🎤</span>
-              <span className="ptt-label">{talking ? "Talking…" : "Hold to Talk"}</span>
+              <div className="ring ring-1"></div>
+              <div className="ring ring-2"></div>
+              <div className="ptt-icon">🎙️</div>
+              <span className="ptt-label">{talking ? "ON AIR" : "TALK"}</span>
             </div>
 
-            <button className="btn-hangup" onClick={handleHangUp}>
-              ✕ End Call
+            <button className="btn-hangup brutal" onClick={handleHangUp}>
+              LEAVE
             </button>
           </>
         )}
+
 
         {(callState === "ended" || callState === "rejected") && (
           <div className="status-badge ended">
