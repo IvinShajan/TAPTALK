@@ -47,13 +47,23 @@ const socketToUser = new Map();
 
 app.get("/health", (req, res) => res.json({ status: "ok" }));
 
+function normalizeId(id) {
+  if (!id) return null;
+  const s = id.trim();
+  if (s.includes("@")) return s.toLowerCase();
+  // Phone: keep + but remove other non-digits
+  return s.startsWith("+") ? "+" + s.replace(/\D/g, "") : s.replace(/\D/g, "");
+}
+
+
 io.on("connection", (socket) => {
   console.log("Socket connected:", socket.id);
 
   // User comes online
   socket.on("register", (userData) => {
     const { phoneNumber, email, displayName, uid } = userData;
-    const id = phoneNumber || email;
+    const rawId = phoneNumber || email;
+    const id = normalizeId(rawId);
     
     if (!id) return;
 
@@ -73,6 +83,7 @@ io.on("connection", (socket) => {
     socketToUser.set(socket.id, id);
     console.log(`Registered: ${id} [${displayName || 'No Name'}]`);
 
+
     // Notify all friends that this user is online
     socket.broadcast.emit("friend-status", {
       phoneNumber,
@@ -83,9 +94,10 @@ io.on("connection", (socket) => {
 
   // Search Render's JSON + Live database
   socket.on("search-user", ({ identifier }, callback) => {
+    const id = normalizeId(identifier);
     // Check live first, then registry
-    const liveUser = onlineUsers.get(identifier);
-    const registeredUser = userRegistry[identifier];
+    const liveUser = onlineUsers.get(id);
+    const registeredUser = userRegistry[id];
 
     if (liveUser) {
       callback({ found: true, user: liveUser });
@@ -99,16 +111,19 @@ io.on("connection", (socket) => {
 
 
 
+
   // Check if a friend is online
   socket.on("check-online", ({ phoneNumber, email }, callback) => {
-    const id = phoneNumber || email;
+    const id = normalizeId(phoneNumber || email);
     callback({ online: onlineUsers.has(id) });
   });
 
 
+
   // WebRTC signaling: offer
   socket.on("call-offer", ({ to, offer, from }) => {
-    const target = onlineUsers.get(to);
+    const targetId = normalizeId(to);
+    const target = onlineUsers.get(targetId);
     if (target) {
       io.to(target.socketId).emit("incoming-call", { from, offer });
     } else {
@@ -117,9 +132,11 @@ io.on("connection", (socket) => {
   });
 
 
+
   // WebRTC signaling: answer
   socket.on("call-answer", ({ to, answer }) => {
-    const target = onlineUsers.get(to);
+    const targetId = normalizeId(to);
+    const target = onlineUsers.get(targetId);
     if (target) {
       io.to(target.socketId).emit("call-answered", { answer });
     }
@@ -128,7 +145,8 @@ io.on("connection", (socket) => {
 
   // WebRTC signaling: ICE candidates
   socket.on("ice-candidate", ({ to, candidate }) => {
-    const target = onlineUsers.get(to);
+    const targetId = normalizeId(to);
+    const target = onlineUsers.get(targetId);
     if (target) {
       io.to(target.socketId).emit("ice-candidate", { candidate });
     }
@@ -137,7 +155,8 @@ io.on("connection", (socket) => {
 
   // Call rejected
   socket.on("reject-call", ({ to }) => {
-    const target = onlineUsers.get(to);
+    const targetId = normalizeId(to);
+    const target = onlineUsers.get(targetId);
     if (target) {
       io.to(target.socketId).emit("call-rejected");
     }
@@ -146,11 +165,13 @@ io.on("connection", (socket) => {
 
   // Hang up
   socket.on("hang-up", ({ to }) => {
-    const target = onlineUsers.get(to);
+    const targetId = normalizeId(to);
+    const target = onlineUsers.get(targetId);
     if (target) {
       io.to(target.socketId).emit("call-ended");
     }
   });
+
 
 
   // Disconnect
