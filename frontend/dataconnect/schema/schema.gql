@@ -1,0 +1,30 @@
+type User @table {
+  username: String!
+  email: String!
+  createdAt: Timestamp!
+  displayName: String
+  profilePictureUrl: String
+}
+
+type Channel @table {
+  name: String!
+  createdAt: Timestamp!
+  owner: User!
+  description: String
+  isPublic: Boolean
+}
+
+type ChannelMembership @table(key: ["user", "channel"]) {
+  user: User!
+  channel: Channel!
+  joinedAt: Timestamp!
+  role: String
+}
+
+type Message @table {
+  channel: Channel!
+  sender: User!
+  audioUrl: String!
+  sentAt: Timestamp!
+  durationSeconds: Int
+}
