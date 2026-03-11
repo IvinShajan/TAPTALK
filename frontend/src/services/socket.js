@@ -11,10 +11,26 @@ export function getSocket() {
   return socket;
 }
 
+let currentUserData = null;
+
 export function registerUser(userData) {
-  // userData = { phoneNumber, email }
-  getSocket().emit("register", userData);
+  currentUserData = userData;
+  const s = getSocket();
+  if (s.connected) {
+    s.emit("register", userData);
+  }
 }
+
+// Ensure re-registration on reconnect
+export function initSocket() {
+  const s = getSocket();
+  s.on("connect", () => {
+    if (currentUserData) {
+      s.emit("register", currentUserData);
+    }
+  });
+}
+
 
 export function checkFriendOnline(identifier) {
   return new Promise((resolve) => {

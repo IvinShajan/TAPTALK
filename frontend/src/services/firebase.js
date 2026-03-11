@@ -65,7 +65,15 @@ export async function saveUserProfile(uid, phoneNumber, displayName, email) {
     displayName: displayName || phoneNumber || email || "User",
     createdAt: Date.now(),
   };
-  if (phoneNumber) data.phoneNumber = phoneNumber.trim();
+
+  if (phoneNumber) {
+    // Normalize: digits only, preserve leading +
+    const cleanPhone = phoneNumber.startsWith("+") 
+      ? "+" + phoneNumber.replace(/\D/g, "") 
+      : phoneNumber.replace(/\D/g, "");
+    data.phoneNumber = cleanPhone;
+  }
+  
   if (email) data.email = email.toLowerCase().trim();
 
 

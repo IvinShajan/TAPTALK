@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { auth } from "./services/firebase";
-import { registerUser, getSocket } from "./services/socket";
+import { registerUser, getSocket, initSocket } from "./services/socket";
 import Login from "./pages/Login";
 import Friends from "./pages/Friends";
 import Talk from "./pages/Talk";
@@ -15,7 +15,9 @@ export default function App() {
   const [showIncoming, setShowIncoming] = useState(false);
 
   useEffect(() => {
+    initSocket();
     const unsub = auth.onAuthStateChanged((u) => {
+
       setUser(u);
       setAuthLoading(false);
       if (u) {
