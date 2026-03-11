@@ -71,45 +71,50 @@ io.on("connection", (socket) => {
 
   // WebRTC signaling: offer
   socket.on("call-offer", ({ to, offer, from }) => {
-    const targetSocket = onlineUsers.get(to);
-    if (targetSocket) {
-      io.to(targetSocket).emit("incoming-call", { from, offer });
+    const target = onlineUsers.get(to);
+    if (target) {
+      io.to(target.socketId).emit("incoming-call", { from, offer });
     } else {
       socket.emit("call-failed", { reason: "User is offline" });
     }
   });
 
+
   // WebRTC signaling: answer
   socket.on("call-answer", ({ to, answer }) => {
-    const targetSocket = onlineUsers.get(to);
-    if (targetSocket) {
-      io.to(targetSocket).emit("call-answered", { answer });
+    const target = onlineUsers.get(to);
+    if (target) {
+      io.to(target.socketId).emit("call-answered", { answer });
     }
   });
+
 
   // WebRTC signaling: ICE candidates
   socket.on("ice-candidate", ({ to, candidate }) => {
-    const targetSocket = onlineUsers.get(to);
-    if (targetSocket) {
-      io.to(targetSocket).emit("ice-candidate", { candidate });
+    const target = onlineUsers.get(to);
+    if (target) {
+      io.to(target.socketId).emit("ice-candidate", { candidate });
     }
   });
+
 
   // Call rejected
   socket.on("reject-call", ({ to }) => {
-    const targetSocket = onlineUsers.get(to);
-    if (targetSocket) {
-      io.to(targetSocket).emit("call-rejected");
+    const target = onlineUsers.get(to);
+    if (target) {
+      io.to(target.socketId).emit("call-rejected");
     }
   });
 
+
   // Hang up
   socket.on("hang-up", ({ to }) => {
-    const targetSocket = onlineUsers.get(to);
-    if (targetSocket) {
-      io.to(targetSocket).emit("call-ended");
+    const target = onlineUsers.get(to);
+    if (target) {
+      io.to(target.socketId).emit("call-ended");
     }
   });
+
 
   // Disconnect
   socket.on("disconnect", () => {
