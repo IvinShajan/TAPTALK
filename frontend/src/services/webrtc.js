@@ -11,8 +11,16 @@ const RTC_CONFIG = {
 
 let peerConnection = null;
 let localStream = null;
-let remotePhoneNumber = null;
+let pendingCandidates = [];
 let onCallEndedCb = null;
+
+function normalizeId(id) {
+  if (!id) return null;
+  const s = id.trim();
+  if (s.includes("@")) return s.toLowerCase();
+  return s.startsWith("+") ? "+" + s.replace(/\D/g, "") : s.replace(/\D/g, "");
+}
+
 
 // ── Setup ─────────────────────────────────────────────────────────────────────
 
@@ -38,8 +46,9 @@ function createPeerConnection(friendPhone, myPhone) {
   remotePhoneNumber = friendPhone;
 
   pc.onicecandidate = ({ candidate }) => {
-    if (candidate) sendIceCandidate(friendPhone, candidate);
+    if (candidate) sendIceCandidate(normalizeId(friendPhone), candidate);
   };
+
 
   pc.ontrack = ({ streams }) => {
     const audio = document.getElementById("remote-audio");
@@ -60,42 +69,70 @@ function createPeerConnection(friendPhone, myPhone) {
 
 export async function startCall(friendPhone, myPhone) {
   const stream = await getMicStream();
+  // Ensure mic starts muted for PTT
+  stream.getAudioTracks().forEach(t => t.enabled = false);
+  
   const pc = createPeerConnection(friendPhone, myPhone);
 
   stream.getTracks().forEach((track) => pc.addTrack(track, stream));
 
   const offer = await pc.createOffer();
   await pc.setLocalDescription(offer);
-  sendOffer(friendPhone, offer, myPhone);
+  sendOffer(normalizeId(friendPhone), offer, normalizeId(myPhone));
 }
+
 
 // ── Callee ────────────────────────────────────────────────────────────────────
 
 export async function acceptCall(friendPhone, offer, myPhone) {
   const stream = await getMicStream();
+  // Ensure mic starts muted for PTT
+  stream.getAudioTracks().forEach(t => t.enabled = false);
+
   const pc = createPeerConnection(friendPhone, myPhone);
 
   stream.getTracks().forEach((track) => pc.addTrack(track, stream));
 
   await pc.setRemoteDescription(new RTCSessionDescription(offer));
+  
+  // Process pending ICE candidates
+  while (pendingCandidates.length > 0) {
+    const cand = pendingCandidates.shift();
+    await pc.addIceCandidate(new RTCIceCandidate(cand));
+  }
+
   const answer = await pc.createAnswer();
   await pc.setLocalDescription(answer);
-  sendAnswer(friendPhone, answer);
+  sendAnswer(normalizeId(friendPhone), answer);
 }
+
 
 // ── Common ────────────────────────────────────────────────────────────────────
 
 export async function handleAnswer(answer) {
-  await peerConnection?.setRemoteDescription(new RTCSessionDescription(answer));
+  if (!peerConnection) return;
+  await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+  
+  // Process pending ICE candidates
+  while (pendingCandidates.length > 0) {
+    const cand = pendingCandidates.shift();
+    await peerConnection.addIceCandidate(new RTCIceCandidate(cand));
+  }
 }
 
+
 export async function handleIceCandidate(candidate) {
+  if (!peerConnection || !peerConnection.remoteDescription) {
+    pendingCandidates.push(candidate);
+    return;
+  }
   try {
-    await peerConnection?.addIceCandidate(new RTCIceCandidate(candidate));
+    await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
   } catch (e) {
     console.error("ICE error", e);
   }
 }
+
 
 // Push-to-talk: mute/unmute local audio
 export function setMicActive(active) {
@@ -107,9 +144,10 @@ export function endCall() {
   setMicActive(false);
   peerConnection?.close();
   peerConnection = null;
-  remotePhoneNumber = null;
+  pendingCandidates = [];
   // Keep stream alive for next call
 }
+
 
 export function releaseMedia() {
   localStream?.getTracks().forEach((t) => t.stop());
