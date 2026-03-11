@@ -46,11 +46,20 @@ export default function App() {
 
 
 
-  const handleSelectFriend = (friend) => {
-    setSelectedFriend(friend);
-    setIncomingCall(null);
-    setView("talk");
+  const handleSelectFriend = async (friend) => {
+    // Request mic permission on user click (required by mobile browsers)
+    const { warmUpMedia } = await import("./services/webrtc");
+    const ready = await warmUpMedia();
+    
+    if (ready) {
+      setSelectedFriend(friend);
+      setIncomingCall(null);
+      setView("talk");
+    } else {
+      alert("Please allow microphone access to use the WalkieTalkie.");
+    }
   };
+
 
   const handleIncomingCall = ({ from, offer }) => {
     // Find friend from contacts or create placeholder

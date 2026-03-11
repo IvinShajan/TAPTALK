@@ -32,17 +32,40 @@ export function setCallEndedCallback(cb) {
 }
 
 async function getMicStream() {
-  if (localStream) return localStream;
-  localStream = await navigator.mediaDevices.getUserMedia({
-    audio: {
-      echoCancellation: true,
-      noiseSuppression: true,
-      autoGainControl: true,
-    },
-    video: false,
-  });
-  return localStream;
+  if (localStream && localStream.active) return localStream;
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
+      video: false,
+    });
+    // Ensure tracks start enabled but muted for PTT
+    localStream.getAudioTracks().forEach(t => t.enabled = false);
+    return localStream;
+  } catch (e) {
+    console.error("Mic error:", e);
+    throw new Error("Microphone permission denied. Please allow mic access to talk.");
+  }
 }
+
+export async function warmUpMedia() {
+  try {
+    await getMicStream();
+    // Warm up AudioContext for mobile
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (AudioContext) {
+      const ctx = new AudioContext();
+      if (ctx.state === "suspended") await ctx.resume();
+    }
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 
 function createPeerConnection(friendPhone, myPhone) {
   const pc = new RTCPeerConnection(RTC_CONFIG);
@@ -159,6 +182,13 @@ export function endCall() {
 
 
 export function releaseMedia() {
-  localStream?.getTracks().forEach((t) => t.stop());
-  localStream = null;
+  if (localStream) {
+    localStream.getTracks().forEach((t) => t.stop());
+    localStream = null;
+  }
 }
+
+export function isMicReady() {
+  return !!(localStream && localStream.active);
+}
+
