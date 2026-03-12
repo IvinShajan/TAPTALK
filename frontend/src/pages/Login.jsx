@@ -2,7 +2,7 @@ import { useState } from "react";
 import { mockGoogleLogin } from "../services/api"; // this acts as general login now for testing
 
 export default function Login({ onLogin }) {
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState("+91 9048853201");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
