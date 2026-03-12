@@ -33,14 +33,14 @@ function getUserByContact(contactInfo) {
   );
 }
 
-function createUser(contactInfo) {
+function createUser(contactInfo, displayName) {
   const isEmail = contactInfo.includes('@');
   const uid = generateUid();
   const user = {
     uid,
     phoneNumber: isEmail ? null : contactInfo,
     email: isEmail ? contactInfo : null,
-    displayName: contactInfo,
+    displayName: displayName || contactInfo,
     createdAt: Date.now()
   };
   db.users[uid] = user;
@@ -48,12 +48,28 @@ function createUser(contactInfo) {
   return user;
 }
 
-function getOrCreateUser(contactInfo) {
+function getOrCreateUser(contactInfo, displayName) {
   let user = getUserByContact(contactInfo);
   if (!user) {
-    user = createUser(contactInfo);
+    user = createUser(contactInfo, displayName);
+  } else if (displayName && user.displayName !== displayName) {
+      // update display name if user logs in again with a new one
+      user.displayName = displayName;
+      saveDb();
   }
   return user;
+}
+
+function searchUsers(query, excludeUid) {
+  if (!query) return [];
+  const lowerQ = query.toLowerCase();
+  return Object.values(db.users).filter(u => {
+    if (u.uid === excludeUid) return false;
+    const nameStr = (u.displayName || "").toLowerCase();
+    const phoneStr = (u.phoneNumber || "").toLowerCase();
+    const emailStr = (u.email || "").toLowerCase();
+    return nameStr.includes(lowerQ) || phoneStr.includes(lowerQ) || emailStr.includes(lowerQ);
+  });
 }
 
 // Friend methods
@@ -91,5 +107,6 @@ module.exports = {
   getOrCreateUser,
   addFriend,
   getFriends,
-  getUserByContact
+  getUserByContact,
+  searchUsers
 };

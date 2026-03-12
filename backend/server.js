@@ -24,16 +24,26 @@ const onlineUsers = new Map();
 // Map: socketId -> userIdentifier
 const socketToUser = new Map();
 
-const { getOrCreateUser, addFriend, getFriends, getUserByContact } = require("./db");
+const { getOrCreateUser, addFriend, getFriends, getUserByContact, searchUsers } = require("./db");
 
 app.get("/health", (req, res) => res.json({ status: "ok" }));
 
 app.post("/api/login", (req, res) => {
-  const { contactInfo } = req.body;
+  const { contactInfo, displayName } = req.body;
   if (!contactInfo) return res.status(400).json({ error: "Contact info required" });
   try {
-    const user = getOrCreateUser(contactInfo);
+    const user = getOrCreateUser(contactInfo, displayName);
     res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/users/search", (req, res) => {
+  const { q, uid } = req.query;
+  try {
+    const results = searchUsers(q, uid);
+    res.json(results);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

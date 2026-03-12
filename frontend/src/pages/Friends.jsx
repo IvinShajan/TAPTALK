@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { getFriends, addFriend, logout } from "../services/api";
+import { getFriends, addFriend, logout, searchUsers } from "../services/api";
 import { checkFriendOnline, getSocket, disconnectSocket } from "../services/socket";
 
 export default function Friends({ user, onSelectFriend, onIncomingCall }) {
   const [friends, setFriends] = useState([]);
   const [onlineMap, setOnlineMap] = useState({});
   const [addInput, setAddInput] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
   const [addError, setAddError] = useState("");
   const [addLoading, setAddLoading] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
@@ -45,17 +46,28 @@ export default function Friends({ user, onSelectFriend, onIncomingCall }) {
     };
   }, []);
 
-  const handleAddFriend = async () => {
+  const handleSearch = async (query) => {
+    setAddInput(query);
     setAddError("");
-    if (!addInput.trim()) return;
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    try {
+      const res = await searchUsers(query, user.uid);
+      setSearchResults(res);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleAddFriend = async (contactInfo) => {
+    setAddError("");
     setAddLoading(true);
     try {
-      // If it's not an email, format as a phone number
-      const contact = addInput.includes("@") ? addInput : 
-                      (addInput.startsWith("+") ? addInput : "+" + addInput);
-      
-      await addFriend(user.uid, contact.trim());
+      await addFriend(user.uid, contactInfo);
       setAddInput("");
+      setSearchResults([]);
       setShowAdd(false);
       await loadFriends();
     } catch (e) {
@@ -93,20 +105,47 @@ export default function Friends({ user, onSelectFriend, onIncomingCall }) {
       </header>
 
       {showAdd && (
-        <div className="add-friend-panel">
+        <div className="add-friend-panel" style={{ paddingBottom: searchResults.length ? '8px' : '16px' }}>
           <input
-            type="tel"
-            placeholder="+1 234 567 8900 or email@example.com"
+            type="text"
+            placeholder="Search users by name, email or phone..."
             value={addInput}
-            onChange={(e) => setAddInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleAddFriend()}
+            onChange={(e) => handleSearch(e.target.value)}
+            disabled={addLoading}
             autoFocus
           />
 
-          <button className="btn-primary" onClick={handleAddFriend} disabled={addLoading}>
-            {addLoading ? <span className="spinner small" /> : "Add"}
-          </button>
           {addError && <p className="error">{addError}</p>}
+          
+          {searchResults.length > 0 && (
+            <div className="search-results" style={{ marginTop: '10px', maxHeight: '200px', overflowY: 'auto' }}>
+              {searchResults.map((su) => (
+                 <div 
+                   key={su.uid} 
+                   className="friend-item" 
+                   style={{ background: 'var(--bg-card)', marginBottom: '8px', padding: '8px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                   onClick={() => handleAddFriend(su.phoneNumber || su.email)}
+                 >
+                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                     <div className="friend-avatar" style={{ width: '32px', height: '32px', fontSize: '14px' }}>
+                       {(su.displayName || su.phoneNumber || su.email).charAt(0).toUpperCase()}
+                     </div>
+                     <div className="friend-info">
+                       <span className="friend-name" style={{ fontSize: '14px' }}>{su.displayName}</span>
+                       <span className="friend-phone" style={{ fontSize: '12px' }}>{su.phoneNumber || su.email}</span>
+                     </div>
+                   </div>
+                   <button className="btn-primary" style={{ padding: '6px 12px', fontSize: '12px', minWidth: 'auto' }}>
+                     + Add
+                   </button>
+                 </div>
+              ))}
+            </div>
+          )}
+          
+          {addInput.trim() && searchResults.length === 0 && !addLoading && (
+            <p style={{ marginTop: '10px', fontSize: '14px', color: '#999', textAlign: 'center' }}>No users found.</p>
+          )}
         </div>
       )}
 

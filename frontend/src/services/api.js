@@ -24,11 +24,11 @@ export async function verifyOTP(phoneNumber, otp) { // Takes phone straight away
   return user;
 }
 
-export async function mockGoogleLogin(email) {
+export async function mockGoogleLogin(email, displayName) {
   const res = await fetch(`${API_URL}/api/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ contactInfo: email })
+    body: JSON.stringify({ contactInfo: email, displayName })
   });
   if (!res.ok) throw new Error("Local Login failed");
   const user = await res.json();
@@ -64,5 +64,13 @@ export async function addFriend(myUid, contactInfo) {
 export async function getFriends(myUid) {
   const res = await fetch(`${API_URL}/api/friends/${myUid}`);
   if (!res.ok) throw new Error("Failed to load friends");
+  return res.json();
+}
+
+export async function searchUsers(query, excludeUid) {
+  const q = encodeURIComponent(query);
+  const uid = encodeURIComponent(excludeUid);
+  const res = await fetch(`${API_URL}/api/users/search?q=${q}&uid=${uid}`);
+  if (!res.ok) throw new Error("Search failed");
   return res.json();
 }

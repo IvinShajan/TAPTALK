@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { mockGoogleLogin } from "../services/api"; // this acts as general login now for testing
+import { mockGoogleLogin } from "../services/api";
 
 export default function Login({ onLogin }) {
   const [phone, setPhone] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const formatPhone = (raw) => {
-    // Basic test formatter
     return raw.trim();
   };
 
@@ -19,7 +19,7 @@ export default function Login({ onLogin }) {
     }
     setLoading(true);
     try {
-      const u = await mockGoogleLogin(formatPhone(phone)); // Uses local db
+      const u = await mockGoogleLogin(formatPhone(phone), displayName.trim()); // Uses local db
       onLogin(u);
     } catch (e) {
       setError(e.message || "Failed to login locally.");
@@ -35,10 +35,22 @@ export default function Login({ onLogin }) {
         <div className="login-logo">
           <span className="logo-icon">📻</span>
           <h1>WalkieTalk</h1>
-          <p className="tagline">Local Test Mode</p>
+          <p className="tagline">Register / Login</p>
         </div>
 
         <div className="login-form">
+          <label>Display Name</label>
+          <div className="phone-input-wrap" style={{ marginBottom: "16px" }}>
+            <input
+              type="text"
+              placeholder="e.g. John Doe"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+              autoFocus
+            />
+          </div>
+
           <label>Phone Number or Email</label>
           <div className="phone-input-wrap">
             <input
@@ -47,7 +59,6 @@ export default function Login({ onLogin }) {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-              autoFocus
             />
           </div>
           {error && <p className="error">{error}</p>}
@@ -56,7 +67,7 @@ export default function Login({ onLogin }) {
             onClick={handleLogin}
             disabled={loading}
           >
-            {loading ? <span className="spinner" /> : "Login →"}
+            {loading ? <span className="spinner" /> : "Continue →"}
           </button>
         </div>
       </div>
