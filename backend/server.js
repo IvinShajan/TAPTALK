@@ -73,11 +73,14 @@ io.on("connection", (socket) => {
   console.log("Socket connected:", socket.id);
 
   // User comes online
-  socket.on("register", ({ phoneNumber, email }) => {
+  socket.on("register", ({ phoneNumber, email, displayName }) => {
     const id = phoneNumber || email;
     onlineUsers.set(id, socket.id);
     socketToUser.set(socket.id, id);
     console.log(`Registered: ${id} -> ${socket.id}`);
+
+    // Immediately persist user data directly via socket
+    getOrCreateUser(id, displayName);
 
     // Notify all friends that this user is online
     socket.broadcast.emit("friend-status", {
@@ -87,6 +90,29 @@ io.on("connection", (socket) => {
     });
   });
 
+  socket.on("search-users", ({ query, uid }, callback) => {
+    try {
+      callback({ success: true, results: searchUsers(query, uid) });
+    } catch (e) {
+      callback({ success: false, error: e.message });
+    }
+  });
+
+  socket.on("get-friends", ({ uid }, callback) => {
+    try {
+      callback({ success: true, friends: getFriends(uid) });
+    } catch (e) {
+      callback({ success: false, error: e.message });
+    }
+  });
+
+  socket.on("add-friend", ({ uid, contactInfo }, callback) => {
+    try {
+      callback({ success: true, friend: addFriend(uid, contactInfo) });
+    } catch (e) {
+      callback({ success: false, error: e.message });
+    }
+  });
 
   // Check if a friend is online
   socket.on("check-online", ({ phoneNumber, email }, callback) => {
