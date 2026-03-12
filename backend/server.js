@@ -15,7 +15,8 @@ const io = new Server(server, {
   cors: {
     origin: true,
     methods: ["GET", "POST", "OPTIONS"],
-    credentials: true
+    credentials: true,
+    allowedHeaders: ["Bypass-Tunnel-Reminder", "ngrok-skip-browser-warning"]
   },
 });
 

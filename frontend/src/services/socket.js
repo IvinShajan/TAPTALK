@@ -9,7 +9,8 @@ export function getSocket() {
     socket = io(SOCKET_URL, {
       transports: ["polling", "websocket"],
       extraHeaders: {
-        "ngrok-skip-browser-warning": "69420"
+        "ngrok-skip-browser-warning": "69420",
+        "Bypass-Tunnel-Reminder": "true"
       }
     });
   }
