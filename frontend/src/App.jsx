@@ -22,7 +22,8 @@ export default function App() {
       if (u) {
         registerUser({ 
           phoneNumber: u.phoneNumber, 
-          email: u.email 
+          email: u.email,
+          displayName: u.displayName
         });
       }
     };
@@ -33,7 +34,8 @@ export default function App() {
     setUser(u);
     registerUser({ 
       phoneNumber: u.phoneNumber, 
-      email: u.email 
+      email: u.email,
+      displayName: u.displayName
     });
   };
 

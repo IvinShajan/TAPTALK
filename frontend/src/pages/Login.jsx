@@ -18,14 +18,20 @@ export default function Login({ onLogin }) {
       return;
     }
     setLoading(true);
-    try {
-      const u = await mockGoogleLogin(formatPhone(phone), displayName.trim()); // Uses local db
-      onLogin(u);
-    } catch (e) {
-      setError(e.message || "Failed to login locally.");
-    } finally {
-      setLoading(false);
-    }
+    
+    setTimeout(() => {
+        const contactInfo = formatPhone(phone);
+        const u = {
+            uid: `user_${Date.now()}`,
+            phoneNumber: contactInfo.includes("@") ? null : contactInfo,
+            email: contactInfo.includes("@") ? contactInfo : null,
+            displayName: displayName.trim() || contactInfo,
+        };
+        // Store user purely client-side immediately
+        localStorage.setItem("local_user", JSON.stringify(u));
+        onLogin(u);
+        setLoading(false);
+    }, 400);
   };
 
 
