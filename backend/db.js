@@ -85,6 +85,7 @@ function getFriends(uid) {
 
 // Ensure mock ID is always seeded on startup
 getOrCreateUser("+91 9048853201");
+getOrCreateUser("+91 9483985321");
 
 module.exports = {
   getOrCreateUser,

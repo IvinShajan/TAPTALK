@@ -1,0 +1,19 @@
+{
+  "users": {
+    "user_1773303580433_acbaj1dbv": {
+      "uid": "user_1773303580433_acbaj1dbv",
+      "phoneNumber": "+91 9048853201",
+      "email": null,
+      "displayName": "+91 9048853201",
+      "createdAt": 1773303580433
+    },
+    "user_1773303832854_ou0f9wqmw": {
+      "uid": "user_1773303832854_ou0f9wqmw",
+      "phoneNumber": "+91 9483985321",
+      "email": null,
+      "displayName": "+91 9483985321",
+      "createdAt": 1773303832854
+    }
+  },
+  "friends": {}
+}
