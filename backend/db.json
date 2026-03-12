@@ -13,7 +13,70 @@
       "email": null,
       "displayName": "+91 9483985321",
       "createdAt": 1773303832854
+    },
+    "user_1773310677375_d1gbx43pk": {
+      "uid": "user_1773310677375_d1gbx43pk",
+      "phoneNumber": null,
+      "email": "pshahul739@gmail.com",
+      "displayName": "sha",
+      "createdAt": 1773310677375
+    },
+    "user_1773310705641_teq8e7whb": {
+      "uid": "user_1773310705641_teq8e7whb",
+      "phoneNumber": "9048853201",
+      "email": null,
+      "displayName": "ivin",
+      "createdAt": 1773310705641
+    },
+    "user_1773310766040_qxw6k6l3t": {
+      "uid": "user_1773310766040_qxw6k6l3t",
+      "phoneNumber": "+91 7907554007",
+      "email": null,
+      "displayName": "sha",
+      "createdAt": 1773310766040
+    },
+    "user_1773311148193_5r1kp2vg2": {
+      "uid": "user_1773311148193_5r1kp2vg2",
+      "phoneNumber": "7907554007",
+      "email": null,
+      "displayName": "sha",
+      "createdAt": 1773311148193
     }
   },
-  "friends": {}
+  "friends": {
+    "user_1773310725050": {
+      "user_1773310766040_qxw6k6l3t": {
+        "uid": "user_1773310766040_qxw6k6l3t",
+        "phoneNumber": "+91 7907554007",
+        "email": null,
+        "displayName": "sha",
+        "addedAt": 1773310772593
+      }
+    },
+    "user_1773310938665": {
+      "user_1773303580433_acbaj1dbv": {
+        "uid": "user_1773303580433_acbaj1dbv",
+        "phoneNumber": "+91 9048853201",
+        "email": null,
+        "displayName": "+91 9048853201",
+        "addedAt": 1773310998607
+      }
+    },
+    "user_1773311090417": {
+      "user_1773303580433_acbaj1dbv": {
+        "uid": "user_1773303580433_acbaj1dbv",
+        "phoneNumber": "+91 9048853201",
+        "email": null,
+        "displayName": "+91 9048853201",
+        "addedAt": 1773311184483
+      },
+      "user_1773310705641_teq8e7whb": {
+        "uid": "user_1773310705641_teq8e7whb",
+        "phoneNumber": "9048853201",
+        "email": null,
+        "displayName": "ivin",
+        "addedAt": 1773311196253
+      }
+    }
+  }
 }
