@@ -20,9 +20,41 @@ const onlineUsers = new Map();
 // Map: socketId -> userIdentifier
 const socketToUser = new Map();
 
+const { getOrCreateUser, addFriend, getFriends, getUserByContact } = require("./db");
 
 app.get("/health", (req, res) => res.json({ status: "ok" }));
 
+app.post("/api/login", (req, res) => {
+  const { contactInfo } = req.body;
+  if (!contactInfo) return res.status(400).json({ error: "Contact info required" });
+  try {
+    const user = getOrCreateUser(contactInfo);
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/friends/:uid", (req, res) => {
+  const { uid } = req.params;
+  try {
+    const friends = getFriends(uid);
+    res.json(friends);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/friends", (req, res) => {
+  const { uid, contactInfo } = req.body;
+  if (!uid || !contactInfo) return res.status(400).json({ error: "Missing fields" });
+  try {
+    const friend = addFriend(uid, contactInfo);
+    res.json(friend);
+  } catch (err) {
+    res.status(404).json({ error: err.message });
+  }
+});
 io.on("connection", (socket) => {
   console.log("Socket connected:", socket.id);
 

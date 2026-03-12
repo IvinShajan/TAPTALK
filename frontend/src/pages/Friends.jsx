@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { getFriends, addFriend } from "../services/firebase";
-import { checkFriendOnline, getSocket } from "../services/socket";
+import { getFriends, addFriend, logout } from "../services/api";
+import { checkFriendOnline, getSocket, disconnectSocket } from "../services/socket";
 
 export default function Friends({ user, onSelectFriend, onIncomingCall }) {
   const [friends, setFriends] = useState([]);
@@ -82,9 +82,14 @@ export default function Friends({ user, onSelectFriend, onIncomingCall }) {
           <span className="header-logo">📻</span>
           <h2>WalkieTalk</h2>
         </div>
-        <button className="btn-add" onClick={() => setShowAdd(!showAdd)}>
-          {showAdd ? "✕" : "+ Friend"}
-        </button>
+        <div className="header-right">
+          <button className="btn-add" onClick={() => { disconnectSocket(); logout(); }} style={{ marginRight: 8, background: '#444' }}>
+            Logout
+          </button>
+          <button className="btn-add" onClick={() => setShowAdd(!showAdd)}>
+            {showAdd ? "✕" : "+ Friend"}
+          </button>
+        </div>
       </header>
 
       {showAdd && (

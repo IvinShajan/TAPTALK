@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { auth } from "./services/firebase";
+import { getCurrentUser } from "./services/api";
 import { registerUser, getSocket } from "./services/socket";
 import Login from "./pages/Login";
 import Friends from "./pages/Friends";
@@ -15,7 +15,8 @@ export default function App() {
   const [showIncoming, setShowIncoming] = useState(false);
 
   useEffect(() => {
-    const unsub = auth.onAuthStateChanged((u) => {
+    const checkAuth = async () => {
+      const u = getCurrentUser();
       setUser(u);
       setAuthLoading(false);
       if (u) {
@@ -24,9 +25,8 @@ export default function App() {
           email: u.email 
         });
       }
-
-    });
-    return unsub;
+    };
+    checkAuth();
   }, []);
 
   const handleLogin = (u) => {
