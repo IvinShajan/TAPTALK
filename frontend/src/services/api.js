@@ -1,5 +1,9 @@
 const API_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:4000";
 
+const NGROK_HEADERS = {
+  "ngrok-skip-browser-warning": "69420"
+};
+
 // ── Auth mock ─────────────────────────────────────────────────────────────────
 
 // For the testing phase, we'll just mock OTP logic entirely and rely on backend
@@ -14,7 +18,7 @@ export async function verifyOTP(phoneNumber, otp) { // Takes phone straight away
   // Mock login: directly request user from our local backend using phone
   const res = await fetch(`${API_URL}/api/login`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...NGROK_HEADERS },
     body: JSON.stringify({ contactInfo: phoneNumber })
   });
   if (!res.ok) throw new Error("Local Login failed");
@@ -27,7 +31,7 @@ export async function verifyOTP(phoneNumber, otp) { // Takes phone straight away
 export async function mockGoogleLogin(email, displayName) {
   const res = await fetch(`${API_URL}/api/login`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...NGROK_HEADERS },
     body: JSON.stringify({ contactInfo: email, displayName })
   });
   if (!res.ok) throw new Error("Local Login failed");
@@ -51,7 +55,7 @@ export function getCurrentUser() {
 export async function addFriend(myUid, contactInfo) {
   const res = await fetch(`${API_URL}/api/friends`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...NGROK_HEADERS },
     body: JSON.stringify({ uid: myUid, contactInfo })
   });
   if (!res.ok) {
@@ -62,7 +66,7 @@ export async function addFriend(myUid, contactInfo) {
 }
 
 export async function getFriends(myUid) {
-  const res = await fetch(`${API_URL}/api/friends/${myUid}`);
+  const res = await fetch(`${API_URL}/api/friends/${myUid}`, { headers: NGROK_HEADERS });
   if (!res.ok) throw new Error("Failed to load friends");
   return res.json();
 }
@@ -70,7 +74,7 @@ export async function getFriends(myUid) {
 export async function searchUsers(query, excludeUid) {
   const q = encodeURIComponent(query);
   const uid = encodeURIComponent(excludeUid);
-  const res = await fetch(`${API_URL}/api/users/search?q=${q}&uid=${uid}`);
+  const res = await fetch(`${API_URL}/api/users/search?q=${q}&uid=${uid}`, { headers: NGROK_HEADERS });
   if (!res.ok) throw new Error("Search failed");
   return res.json();
 }
