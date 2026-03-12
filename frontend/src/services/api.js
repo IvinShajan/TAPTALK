@@ -50,31 +50,33 @@ export function getCurrentUser() {
   return data ? JSON.parse(data) : null;
 }
 
+import { getSocket } from "./socket";
+
 // ── Friends & DB mock ─────────────────────────────────────────────────────────
 
 export async function addFriend(myUid, contactInfo) {
-  const res = await fetch(`${API_URL}/api/friends`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...NGROK_HEADERS },
-    body: JSON.stringify({ uid: myUid, contactInfo })
+  return new Promise((resolve, reject) => {
+    getSocket().emit("add-friend", { uid: myUid, contactInfo }, (res) => {
+      if (res.success) resolve(res.friend);
+      else reject(new Error(res.error || "Failed to add friend"));
+    });
   });
-  if (!res.ok) {
-    const data = await res.json();
-    throw new Error(data.error || "Failed to add friend");
-  }
-  return res.json();
 }
 
 export async function getFriends(myUid) {
-  const res = await fetch(`${API_URL}/api/friends/${myUid}`, { headers: NGROK_HEADERS });
-  if (!res.ok) throw new Error("Failed to load friends");
-  return res.json();
+  return new Promise((resolve, reject) => {
+    getSocket().emit("get-friends", { uid: myUid }, (res) => {
+      if (res.success) resolve(res.friends);
+      else reject(new Error(res.error || "Failed to load friends"));
+    });
+  });
 }
 
 export async function searchUsers(query, excludeUid) {
-  const q = encodeURIComponent(query);
-  const uid = encodeURIComponent(excludeUid);
-  const res = await fetch(`${API_URL}/api/users/search?q=${q}&uid=${uid}`, { headers: NGROK_HEADERS });
-  if (!res.ok) throw new Error("Search failed");
-  return res.json();
+  return new Promise((resolve, reject) => {
+    getSocket().emit("search-users", { query, uid: excludeUid }, (res) => {
+      if (res.success) resolve(res.results);
+      else reject(new Error(res.error || "Search failed"));
+    });
+  });
 }
